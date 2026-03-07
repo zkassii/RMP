@@ -1,39 +1,116 @@
-Эта лабораторная работа посвящена управлению ресурсами в Android-приложении с использованием Jetpack Compose. Использование ресурсов вместо жестко заданных (hardcoded) значений позволяет легко локализовать приложение и изменять дизайн без переписывания логики.
-Ниже представлено подробное руководство по выполнению всех пунктов задания.
-1. Подготовка строковых ресурсов (strings.xml)
-Сначала настроим локализацию. Файлы ресурсов находятся в res/values/strings.xml. Для английской локализации создайте res/values-en/strings.xml.
-Пример res/values/strings.xml (Русский):
-<resources>
-    <string name="app_name">Мое ИТ Приложение</string>
-    <string name="search_hint">Поиск</string>
-    <string name="menu_label">Меню</string>
-    <string name="copyright_format">© %1$s. Все права защищены. %2$d</string>
+@Composable
+fun LabScreen() {
+    val scrollState = rememberScrollState()
     
-    <string-array name="developers_names">
-        <item>Иван Иванов</item>
-        <item>Петр Петров</item>
-    </string-array>
+    // Получаем данные времени (как у тебя в коде)
+    val calendar = Calendar.getInstance()
+    val hour = calendar.get(Calendar.HOUR_OF_DAY)
+    val minute = calendar.get(Calendar.MINUTE)
+    val year = calendar.get(Calendar.YEAR)
+    
+    val developers = stringArrayResource(id = R.array.authors)
+    val hoursText = pluralStringResource(id = R.plurals.hours, count = hour, hour)
+    val minutesText = pluralStringResource(id = R.plurals.minutes, count = minute, minute)
 
-    <plurals name="hours">
-        <item quantity="one">%d час</item>
-        <item quantity="few">%d часа</item>
-        <item quantity="many">%d часов</item>
-        <item quantity="other">%d часа</item>
-    </plurals>
+    // ВНЕШНИЙ КОНТЕЙНЕР
+    Column(modifier = Modifier.fillMaxSize()) {
+        
+        // 1. ФИКСИРОВАННАЯ ВЕРХНЯЯ ПАНЕЛЬ (теперь она не будет улетать в небо)
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = stringResource(id = R.string.app_name),
+                style = MaterialTheme.typography.titleLarge.copy(fontFamily = CustomFontFamily),
+                modifier = Modifier.weight(1f)
+            )
+            
+            TextField(
+                value = "",
+                onValueChange = {},
+                placeholder = { Text(text = stringResource(id = R.string.search)) },
+                modifier = Modifier
+                    .weight(2f)
+                    .height(dimensionResource(id = R.dimen.search_height))
+                    .padding(horizontal = 8.dp),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = colorResource(id = R.color.search_bg)
+                )
+            )
 
-    <plurals name="minutes">
-        <item quantity="one">%d минута</item>
-        <item quantity="few">%d минуты</item>
-        <item quantity="many">%d минут</item>
-        <item quantity="other">%d минуты</item>
-    </plurals>
-</resources>
+            IconButton(
+                onClick = {},
+                modifier = Modifier.size(dimensionResource(id = R.dimen.menu_button_size))
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.cat1),
+                    contentDescription = null,
+                    tint = colorResource(id = R.color.primary),
+                    modifier = Modifier.size(dimensionResource(id = R.dimen.vector_icon_size))
+                )
+            }
+        }
 
- * Форматированная строка: %1$s — это строковый параметр (имя), а %2$d — числовой (год).
- * Plurals: Позволяют правильно склонять слова «час» и «минута» в зависимости от числа.
-2. Цвета и Размеры (colors.xml, dimens.xml)
-Добавьте ресурсы для оформления интерфейса.
-res/values/colors.xml:
+        // 2. СКРОЛЛИРУЕМАЯ ЧАСТЬ (занимает всё оставшееся место)
+        Column(
+            modifier = Modifier
+                .weight(1f) // Это заставляет скролл работать правильно
+                .verticalScroll(scrollState)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Время
+            Text(
+                text = "$hour $hoursText $minute $minutesText",
+                style = MaterialTheme.typography.headlineMedium.copy(fontFamily = CustomFontFamily),
+                color = colorResource(id = R.color.primary)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Векторная иконка
+            Text(text = "Векторная иконка (XML)", fontFamily = CustomFontFamily)
+            Image(
+                painter = painterResource(id = R.drawable.cat1),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(dimensionResource(id = R.dimen.image_size))
+                    .background(colorResource(id = R.color.accent)),
+                colorFilter = ColorFilter.tint(colorResource(id = R.color.primary))
+            )
+
+            // Растровое изображение (КРУГЛОЕ)
+            Text(text = "Растровое изображение (PNG) — круглое", fontFamily = CustomFontFamily)
+            Image(
+                painter = painterResource(id = R.drawable.cat),
+                contentDescription = null,
+                contentScale = ContentScale.Crop, // ВАЖНО для правильной обрезки
+                modifier = Modifier
+                    .size(dimensionResource(id = R.dimen.image_size))
+                    .clip(CircleShape) // Обрезаем по кругу
+            )
+
+            // Копирайты внизу списка
+            developers.forEach { dev ->
+                Text(
+                    text = stringResource(id = R.string.copyright, dev, year),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = CustomFontFamily),
+                    color = colorResource(id = R.color.text)
+                )
+            }
+            
+            Text(
+                text = "Все элементы используют ресурсы",
+                fontFamily = CustomFontFamily,
+                color = colorResource(id = R.color.text)
+            )
+        }
+    }
+}
 <resources>
     <color name="search_bar_bg">#F0F0F0</color>
     <color name="button_color">#6200EE</color>
