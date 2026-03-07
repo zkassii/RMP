@@ -1,126 +1,59 @@
 @Composable
 fun LabScreen() {
-    val scrollState = rememberScrollState()
-    
-    // Данные времени
-    val calendar = Calendar.getInstance()
-    val hour = calendar.get(Calendar.HOUR_OF_DAY)
-    val minute = calendar.get(Calendar.MINUTE)
-    val year = calendar.get(Calendar.YEAR)
-    
-    // Твои ресурсы из файлов
-    val authors = stringArrayResource(id = R.array.authors)
-    val hoursText = pluralStringResource(id = R.plurals.hours, count = hour, hour)
-    val minutesText = pluralStringResource(id = R.plurals.minutes, count = minute, minute)
+    val scrollState = rememberScrollState() //
+    // ... получение времени и ресурсов (authors, hoursText и т.д.) ...
 
-    // Внешний Column на весь экран
+    // ВНЕШНИЙ КОНТЕЙНЕР
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .background(colorResource(id = R.color.background))
+            .background(colorResource(id = R.color.background)) //
+            .statusBarsPadding() // ЭТО УБЕРЕТ ТЕКСТ ИЗ-ПОД ЧЕЛКИ
     ) {
-        
-        // --- Верхняя панель (Фиксированная) ---
+        // 1. ВЕРХНЯЯ ПАНЕЛЬ (Остается на месте)
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(all = dimensionResource(id = R.dimen.padding_standard)),
+                .padding(all = dimensionResource(id = R.dimen.padding_standard)), //
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = stringResource(id = R.string.app_name),
-                // Используем твой CustomFontFamily из Type.kt
-                style = MaterialTheme.typography.titleLarge.copy(fontFamily = CustomFontFamily),
-                color = colorResource(id = R.color.text),
-                modifier = Modifier.weight(weight = 1f)
+                text = stringResource(id = R.string.app_name), //
+                style = MaterialTheme.typography.titleLarge.copy(fontFamily = CustomFontFamily), //
+                modifier = Modifier.weight(1f)
             )
-            
-            TextField(
-                value = "",
-                onValueChange = {},
-                placeholder = { Text(text = stringResource(id = R.string.search)) },
-                modifier = Modifier
-                    .weight(weight = 2f)
-                    .height(dimensionResource(id = R.dimen.search_height))
-                    .padding(horizontal = 8.dp),
-                colors = TextFieldDefaults.colors(
-                    unfocusedContainerColor = colorResource(id = R.color.search_bg)
-                )
-            )
-
-            IconButton(
-                onClick = {},
-                modifier = Modifier.size(size = dimensionResource(id = R.dimen.menu_button_size))
-            ) {
-                Icon(
-                    painter = painterResource(id = R.drawable.cat1), // Твой вектор cat1.xml
-                    contentDescription = stringResource(id = R.string.menu),
-                    tint = colorResource(id = R.color.primary),
-                    modifier = Modifier.size(size = dimensionResource(id = R.dimen.vector_icon_size))
-                )
-            }
+            // ... твой TextField и IconButton ...
         }
 
-        // --- Скроллируемая область ---
+        // 2. СКРОЛЛИРУЕМАЯ ЧАСТЬ
         Column(
             modifier = Modifier
-                .weight(weight = 1f) // Это "толкает" контент и включает скролл
-                .verticalScroll(state = scrollState)
-                .padding(all = dimensionResource(id = R.dimen.padding_standard)),
-            verticalArrangement = Arrangement.spacedBy(space = 24.dp),
+                .fillMaxWidth()
+                .weight(1f) // ВАЖНО: заставляет скролл работать, занимая всё место
+                .verticalScroll(scrollState) //
+                .padding(horizontal = dimensionResource(id = R.dimen.padding_standard)),
+            verticalArrangement = Arrangement.spacedBy(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Текущее время
+            // Весь остальной контент: время, иконки, кот, авторы
             Text(
                 text = "$hour $hoursText $minute $minutesText",
                 style = MaterialTheme.typography.headlineMedium.copy(fontFamily = CustomFontFamily),
-                color = colorResource(id = R.color.primary)
+                color = colorResource(id = R.color.primary) //
             )
 
-            // Векторная иконка
-            Text(
-                text = "Векторная иконка (XML)", 
-                fontFamily = CustomFontFamily,
-                color = colorResource(id = R.color.text)
-            )
+            // Твой кот с отступом (чтобы не слипался с текстом)
             Image(
-                painter = painterResource(id = R.drawable.cat1),
+                painter = painterResource(id = R.drawable.cat), //
                 contentDescription = null,
+                contentScale = ContentScale.Crop,
                 modifier = Modifier
-                    .size(size = dimensionResource(id = R.dimen.image_size))
-                    .background(colorResource(id = R.color.accent)),
-                colorFilter = ColorFilter.tint(colorResource(id = R.color.primary))
+                    .size(dimensionResource(id = R.dimen.image_size)) //
+                    .padding(top = 16.dp) // Дополнительный отступ сверху от текста
+                    .clip(CircleShape)
             )
-
-            // Растровое изображение (Твой cat.jpg)
-            Text(
-                text = "Растровое изображение (PNG) — круглое", 
-                fontFamily = CustomFontFamily,
-                color = colorResource(id = R.color.text)
-            )
-            Image(
-                painter = painterResource(id = R.drawable.cat), // Твой cat.jpg из drawable
-                contentDescription = null,
-                contentScale = ContentScale.Crop, // Чтобы круг не сплющило
-                modifier = Modifier
-                    .size(size = dimensionResource(id = R.dimen.image_size))
-                    .clip(shape = CircleShape) // Идеальный круг
-            )
-
-            // Список авторов (Копирайт)
-            authors.forEach { author ->
-                Text(
-                    text = stringResource(id = R.string.copyright, author, year),
-                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = CustomFontFamily),
-                    color = colorResource(id = R.color.text)
-                )
-            }
             
-            Text(
-                text = "Все элементы используют ресурсы",
-                fontFamily = CustomFontFamily,
-                color = colorResource(id = R.color.text)
-            )
+            // ... остальной код (authors.forEach и т.д.) ...
         }
     }
 }
