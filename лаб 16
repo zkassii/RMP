@@ -2,7 +2,6 @@
 fun LabScreen() {
     val scrollState = rememberScrollState()
     
-    // Получаем данные времени (как у тебя в коде)
     val calendar = Calendar.getInstance()
     val hour = calendar.get(Calendar.HOUR_OF_DAY)
     val minute = calendar.get(Calendar.MINUTE)
@@ -12,20 +11,20 @@ fun LabScreen() {
     val hoursText = pluralStringResource(id = R.plurals.hours, count = hour, hour)
     val minutesText = pluralStringResource(id = R.plurals.minutes, count = minute, minute)
 
-    // ВНЕШНИЙ КОНТЕЙНЕР
+    // Общий контейнер на весь экран
     Column(modifier = Modifier.fillMaxSize()) {
         
-        // 1. ФИКСИРОВАННАЯ ВЕРХНЯЯ ПАНЕЛЬ (теперь она не будет улетать в небо)
+        // --- Верхняя панель - ФИКСИРОВАННАЯ ---
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp),
+                .padding(all = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
                 text = stringResource(id = R.string.app_name),
                 style = MaterialTheme.typography.titleLarge.copy(fontFamily = CustomFontFamily),
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.weight(weight = 1f) // Название займет место слева
             )
             
             TextField(
@@ -33,7 +32,84 @@ fun LabScreen() {
                 onValueChange = {},
                 placeholder = { Text(text = stringResource(id = R.string.search)) },
                 modifier = Modifier
-                    .weight(2f)
+                    .weight(weight = 2f) // Поле поиска шире
+                    .height(dimensionResource(id = R.dimen.search_height))
+                    .padding(horizontal = 8.dp),
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = colorResource(id = R.color.search_bg)
+                )
+            )
+
+            IconButton(
+                onClick = { },
+                modifier = Modifier.size(size = dimensionResource(id = R.dimen.menu_button_size))
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.cat1),
+                    contentDescription = stringResource(id = R.string.menu),
+                    tint = colorResource(id = R.color.primary),
+                    modifier = Modifier.size(size = dimensionResource(id = R.dimen.vector_icon_size))
+                )
+            }
+        }
+
+        // --- Скроллируемый контент ---
+        Column(
+            modifier = Modifier
+                .weight(1f) // Занимает всё свободное место и включает скролл
+                .verticalScroll(scrollState)
+                .padding(all = 16.dp),
+            verticalArrangement = Arrangement.spacedBy(space = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            // Текущее время
+            Text(
+                text = "$hour $hoursText $minute $minutesText",
+                style = MaterialTheme.typography.headlineMedium.copy(fontFamily = CustomFontFamily),
+                color = colorResource(id = R.color.primary)
+            )
+
+            Spacer(Modifier.height(height = 32.dp))
+
+            Text(text = "Векторная иконка (XML)", fontFamily = CustomFontFamily)
+            Image(
+                painter = painterResource(id = R.drawable.cat1),
+                contentDescription = null,
+                modifier = Modifier
+                    .size(size = dimensionResource(id = R.dimen.image_size))
+                    .background(colorResource(id = R.color.accent)),
+                colorFilter = ColorFilter.tint(colorResource(id = R.color.primary))
+            )
+
+            Spacer(Modifier.height(height = 40.dp))
+
+            Text(text = "Растровое изображение (PNG) — круглое", fontFamily = CustomFontFamily)
+            Image(
+                painter = painterResource(id = R.drawable.cat),
+                contentDescription = null,
+                contentScale = ContentScale.Crop, // Добавь это, чтобы кот не сплющился
+                modifier = Modifier
+                    .size(size = dimensionResource(id = R.dimen.image_size))
+                    .clip(CircleShape) // Режем в круг
+            )
+
+            // Копирайты в самом низу
+            developers.forEach { dev ->
+                Text(
+                    text = stringResource(id = R.string.copyright, dev, year),
+                    style = MaterialTheme.typography.bodyMedium.copy(fontFamily = CustomFontFamily),
+                    color = colorResource(id = R.color.text)
+                )
+            }
+
+            Text(
+                text = "Все элементы используют ресурсы",
+                fontFamily = CustomFontFamily,
+                color = colorResource(id = R.color.text)
+            )
+        }
+    }
+}
                     .height(dimensionResource(id = R.dimen.search_height))
                     .padding(horizontal = 8.dp),
                 colors = TextFieldDefaults.colors(
