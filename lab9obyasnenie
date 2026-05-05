@@ -1,0 +1,154 @@
+**✅ Вот полный код на Kotlin с подробными комментариями:**
+
+```kotlin
+fun main() {
+
+    // ==================== 5.1 Создание, заполнение и вывод списка ====================
+    // Создаём изменяемый список животных (MutableList)
+    val animals = mutableListOf("Кот", "Собака", "Лев")
+
+    // Добавляем 3 элемента программно
+    animals.add("Тигр")
+    animals.add("Медведь")
+    animals.add("Заяц")
+
+    // Добавляем n элементов с клавиатуры
+    print("Введите количество животных для добавления: ")
+    val n1 = readln().toInt()
+    for (i in 1..n1) {
+        print("Введите животное $i: ")
+        animals.add(readln())
+    }
+
+    // Вывод списка в требуемом формате
+    println("\n=== Список животных ===")
+    for (i in animals.indices) {
+        println("${i + 1} – ${animals[i]}")   // номер начинается с 1
+    }
+    println("Количество элементов списка: ${animals.size}")
+
+
+    // ==================== 5.2 Обработка списка целых чисел ====================
+    val numbers = mutableListOf<Int>()
+
+    print("\nВведите количество чисел: ")
+    val n2 = readln().toInt()
+    for (i in 1..n2) {
+        print("Введите число $i: ")
+        numbers.add(readln().toInt())
+    }
+
+    println("\n=== Результаты обработки списка ===")
+    
+    // Поиск индекса первого элемента равного 100
+    val index100 = numbers.indexOf(100)
+    if (index100 != -1) {
+        println("Индекс элемента со значением 100: $index100")
+    } else {
+        println("Элемента со значением 100 нет в списке")
+    }
+
+    println("Сумма всех элементов: ${numbers.sum()}")
+    
+    if (numbers.isNotEmpty()) {
+        println("Среднее арифметическое: %.2f".format(numbers.average()))
+    } else {
+        println("Среднее арифметическое: 0")
+    }
+
+    println("Все числа больше нуля: ${numbers.all { it > 0 }}")
+    
+    // Вывод всех нечётных чисел
+    val oddNumbers = numbers.filter { it % 2 != 0 }
+    println("Нечётные значения: $oddNumbers")
+
+
+    // ==================== 5.3 Создание, заполнение и вывод словаря ====================
+    // Создаём изменяемый словарь (MutableMap)
+    val movies = mutableMapOf(
+        "Интерстеллар" to "Кристофер Нолан",
+        "Начало" to "Кристофер Нолан",
+        "Матрица" to "Лана и Лилли Вачовски"
+    )
+
+    // Добавляем 3 элемента программно
+    movies["Дюна"] = "Дени Вильнёв"
+    movies["Оппенгеймер"] = "Кристофер Нолан"
+    movies["Джокер"] = "Тодд Филлипс"
+
+    // Добавляем n элементов с клавиатуры
+    print("\nВведите количество фильмов для добавления: ")
+    val n3 = readln().toInt()
+    for (i in 1..n3) {
+        print("Введите название фильма: ")
+        val title = readln()
+        print("Введите режиссёра: ")
+        val director = readln()
+        movies[title] = director
+    }
+
+    // Вывод словаря
+    println("\n=== Содержимое словаря ===")
+    for ((title, director) in movies) {
+        println("$title – $director")
+    }
+    println("Количество элементов в словаре: ${movies.size}")
+
+
+    // ==================== 5.4 Поиск и удаление элементов словаря ====================
+    print("\nВведите название фильма для поиска: ")
+    val searchKey = readln()
+    
+    if (searchKey in movies) {
+        println("Ключ найден. Режиссёр: ${movies[searchKey]}")
+    } else {
+        println("Ключ не найден в словаре")
+    }
+
+    print("Введите фамилию режиссёра для подсчёта: ")
+    val searchDirector = readln()
+    val count = movies.count { it.value == searchDirector }
+    println("Количество фильмов режиссёра '$searchDirector': $count")
+
+    // Удаление элемента
+    print("Введите название фильма для удаления: ")
+    val delKey = readln()
+    if (movies.remove(delKey) != null) {
+        println("Фильм успешно удалён")
+    } else {
+        println("Фильм с таким названием не найден")
+    }
+
+    println("\n=== Обновлённый словарь ===")
+    for ((title, director) in movies) {
+        println("$title – $director")
+    }
+
+
+    // ==================== 5.5 Работа с множествами ====================
+    // Два множества студентов, не сдавших зачёт
+    val group1 = mutableSetOf("Иванов И.И.", "Петров П.П.", "Сидоров С.С.", "Кузнецова А.В.")
+    val group2 = mutableSetOf("Петров П.П.", "Сидоров С.С.", "Смирнова Е.Н.", "Васильев В.В.")
+
+    // 1. Всего студентов на пересдачу (объединение)
+    val allRetake = group1 union group2
+
+    // 2. Студенты, не сдавшие оба зачёта (пересечение)
+    val bothFailed = group1 intersect group2
+
+    // 3. Студенты, не сдавшие только один зачёт (симметрическая разность)
+    val onlyOne = (group1 union group2) - (group1 intersect group2)
+
+    println("\n=== Результаты по множествам ===")
+    println("Всего студентов отправлено на пересдачу: ${allRetake.size}")
+    println("Список: $allRetake")
+
+    println("Не сдали зачёт у обоих преподавателей: ${bothFailed.size}")
+    println("Список: $bothFailed")
+
+    println("Не сдали только у одного преподавателя: ${onlyOne.size}")
+    println("Список: $onlyOne")
+}
+```
+
+Код полностью готов к использованию. Комментарии подробные и соответствуют пунктам задания.
