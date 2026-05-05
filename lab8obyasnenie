@@ -1,0 +1,240 @@
+**Kotlin решение задания (подробно, по шагам, как студент)**
+
+### 5.1 Родительский и дочерний классы
+
+```kotlin
+// 5.1.1 Родительский класс
+class Person(val name: String, val age: Int) {
+
+    // Конструктор уже в primary constructor
+    init {
+        println("Создан Person: $name, возраст $age")
+    }
+
+    // Будем переопределять ниже
+    override fun toString(): String {
+        return "Person(name='$name', age=$age)"
+    }
+}
+
+// 5.1.2 Дочерний класс
+class Student(name: String, age: Int, val group: String) : Person(name, age) {
+
+    init {
+        println("Создан Student группы $group")
+    }
+
+    override fun toString(): String {
+        // Используем реализацию родителя + добавляем своё
+        return "${super.toString()} + Student(group='$group')"
+    }
+}
+```
+
+---
+
+### 5.2 Переопределение методов и свойств
+
+```kotlin
+class Person(val name: String, val age: Int) {
+
+    // Свойство на чтение (read-only) — вся информация о человеке
+    open val fullInfo: String
+        get() = "Человек: $name, возраст: $age лет"
+
+    // Метод вывода информации
+    open fun printInfo() {
+        println("=== Информация о Person ===")
+        println("Имя: $name")
+        println("Возраст: $age")
+    }
+
+    override fun toString(): String {
+        return "Person: $name, $age лет"
+    }
+}
+
+class Student(name: String, age: Int, val group: String) : Person(name, age) {
+
+    // Переопределение свойства
+    override val fullInfo: String
+        get() = "Студент: $name, возраст: $age, группа: $group"
+
+    // Переопределение метода (вызываем родительский!)
+    override fun printInfo() {
+        super.printInfo()                    // вызов родительской версии
+        println("Группа: $group")            // добавляем свою строку
+        println("=== Конец информации о студенте ===")
+    }
+
+    override fun toString(): String {
+        return "${super.toString()} (Студент группы $group)"
+    }
+}
+```
+
+---
+
+### 5.3 Абстрактный класс Фигура (вариант 5 — нечётный → Прямоугольник)
+
+```kotlin
+// Абстрактный класс
+abstract class Figure {
+    // Абстрактное свойство
+    abstract val name: String
+
+    // Абстрактные методы
+    abstract fun area(): Double
+    abstract fun perimeter(): Double
+    abstract fun printInfo()
+}
+
+// Реализация — Прямоугольник
+class Rectangle(
+    private val width: Double,
+    private val height: Double
+) : Figure() {
+
+    override val name: String = "Прямоугольник"
+
+    override fun area(): Double = width * height
+
+    override fun perimeter(): Double = 2 * (width + height)
+
+    override fun printInfo() {
+        println("Фигура: $name")
+        println("Ширина: $width")
+        println("Высота: $height")
+        println("Площадь: ${area()}")
+        println("Периметр: ${perimeter()}")
+    }
+}
+```
+
+---
+
+### 5.4 Обобщённый интерфейс и его реализации
+
+```kotlin
+// 5.4.1 Интерфейс
+interface DataSource<T> {
+    fun getNext(): T?   // возвращает следующий элемент или null, если закончились
+}
+
+// 5.4.2 RandomDataSource
+class RandomDataSource : DataSource<Int> {
+    private var count = 0
+
+    override fun getNext(): Int? {
+        return if (count < 20) {           // ограничим, чтобы не было бесконечно
+            count++
+            (1..100).random()
+        } else null
+    }
+}
+
+// 5.4.3 StaticDataSource
+class StaticDataSource<T>(private val data: Array<T>) : DataSource<T> {
+    private var index = 0
+
+    override fun getNext(): T? {
+        return if (index < data.size) {
+            data[index++]
+        } else null
+    }
+}
+
+// 5.4.4 Тестовая функция
+fun print10Elements(source: DataSource<*>) {
+    println("=== Выводим 10 элементов ===")
+    for (i in 1..10) {
+        val item = source.getNext()
+        if (item != null) {
+            println("Элемент $i: $item")
+        } else {
+            println("Элементы закончились на $i")
+            break
+        }
+    }
+    println()
+}
+```
+
+---
+
+### 5.5 Делегирование интерфейсов
+
+```kotlin
+// 5.5.1 Интерфейс сервиса доставки
+interface DeliveryService {
+    val serviceName: String
+    fun deliver(orderNumber: String)
+}
+
+// 5.5.2 Реализация
+class FoodService : DeliveryService {
+    override val serviceName: String = "ВкусДоставка"
+
+    override fun deliver(orderNumber: String) {
+        println("Заказ $orderNumber передан в доставку через $serviceName")
+    }
+}
+
+// 5.5.3 Класс Приложения с делегированием
+class DeliveryApp(private val deliveryService: DeliveryService) : DeliveryService by deliveryService {
+
+    // Собственный метод
+    fun createOrder(orderNumber: String) {
+        println("Приложение: Создаём заказ $orderNumber")
+        deliver(orderNumber)   // вызываем метод через делегирование
+    }
+}
+```
+
+---
+
+### Главная функция для тестирования всего (как main)
+
+```kotlin
+fun main() {
+    println("=== 5.1 и 5.2 — Person и Student ===")
+    val person = Person("Иван Иванов", 45)
+    val student = Student("Петр Петров", 20, "ИКБО-01-25")
+
+    println(person)
+    println(student)
+    println(person.fullInfo)
+    println(student.fullInfo)
+
+    person.printInfo()
+    student.printInfo()
+
+    println("\n=== 5.3 — Фигура ===")
+    val rect = Rectangle(10.5, 7.0)
+    rect.printInfo()
+
+    println("\n=== 5.4 — DataSource ===")
+    val randomSource = RandomDataSource()
+    val staticSource = StaticDataSource(arrayOf("Яблоко", "Банан", "Апельсин", "Груша"))
+
+    print10Elements(randomSource)
+    print10Elements(staticSource)
+
+    println("=== 5.5 — Делегирование ===")
+    val foodService = FoodService()
+    val app = DeliveryApp(foodService)
+
+    app.createOrder("ORD-123456")
+}
+```
+
+---
+
+**Что сделано:**
+- Всё строго по пунктам задания.
+- В методах и свойствах строки вывода отличаются.
+- В дочерних классах используется `super`.
+- Абстрактный класс и делегирование реализованы корректно.
+- Код чистый, понятный, с комментариями.
+
+Можешь копировать по частям и тестировать. Удачи на защите! 🚀
