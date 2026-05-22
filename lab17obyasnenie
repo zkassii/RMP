@@ -1,0 +1,425 @@
+**Вот полное решение лабораторной работы №17 с подробными комментариями на русском языке.**
+
+### 1. `MainActivity.kt`
+
+```kotlin
+package com.example.lab17
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.material3.MaterialTheme
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        setContent {
+            MaterialTheme {
+                // Создаём контроллер навигации между экранами
+                val navController = rememberNavController()
+
+                // NavHost — контейнер для навигации между Composable-экранами
+                NavHost(
+                    navController = navController,
+                    startDestination = "registration"  // Стартовый экран — регистрация
+                ) {
+                    composable("registration") { RegistrationScreen(navController) }
+                    composable("pincode") { PinCodeScreen() }
+                    composable("aboutme") { AboutMeScreen() }
+                    composable("fontsettings") { FontSettingsScreen() }
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+### 2. `RegistrationScreen.kt`
+
+```kotlin
+package com.example.lab17
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.*
+import androidx.navigation.NavHostController
+
+@Composable
+fun RegistrationScreen(navController: NavHostController) {
+
+    // Все состояния (переменные), которые будут изменяться пользователем
+    var login by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var website by remember { mutableStateOf("") }
+
+    var isChecked by remember { mutableStateOf(false) }     // состояние Checkbox
+    var message by remember { mutableStateOf("") }          // сообщение после нажатия кнопки
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Регистрация", style = MaterialTheme.typography.headlineMedium)
+
+        // Поле Логин
+        OutlinedTextField(
+            value = login,
+            onValueChange = { login = it },                    // обновляем значение при вводе
+            label = { Text("Логин") },
+            placeholder = { Text("Введите логин") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Поле Пароль
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Пароль") },
+            placeholder = { Text("Введите пароль") },
+            visualTransformation = PasswordVisualTransformation(), // скрываем пароль
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Подтверждение пароля
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Подтверждение пароля") },
+            placeholder = { Text("Повторите пароль") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Номер телефона
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Номер телефона") },
+            placeholder = { Text("+7XXXXXXXXXX") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Email
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            placeholder = { Text("example@mail.com") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Возраст
+        OutlinedTextField(
+            value = age,
+            onValueChange = { age = it },
+            label = { Text("Возраст") },
+            placeholder = { Text("Введите возраст") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Персональный сайт
+        OutlinedTextField(
+            value = website,
+            onValueChange = { website = it },
+            label = { Text("Персональный сайт") },
+            placeholder = { Text("https://example.com") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Checkbox согласия
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(
+                checked = isChecked,
+                onCheckedChange = { isChecked = it }
+            )
+            Text("Я согласен на обработку персональных данных и принимаю условия Политики конфиденциальности")
+        }
+
+        // Кнопка регистрации
+        Button(
+            onClick = {
+                // Проверка, что все поля заполнены и чекбокс отмечен
+                if (login.isNotBlank() && password.isNotBlank() &&
+                    confirmPassword.isNotBlank() && phone.isNotBlank() &&
+                    email.isNotBlank() && age.isNotBlank() && website.isNotBlank() && isChecked) {
+                    message = "$login, вы зарегистрированы"
+                } else {
+                    message = "Не все поля заполнены"
+                }
+            },
+            enabled = isChecked,        // кнопка активна только если чекбокс отмечен
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Зарегистрироваться")
+        }
+
+        // Отображение результата
+        if (message.isNotEmpty()) {
+            Text(
+                message,
+                color = if (message.contains("зарегистрированы"))
+                    MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.error
+            )
+        }
+
+        // Кнопки навигации к другим экранам
+        Button(onClick = { navController.navigate("pincode") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Перейти к ПИН-коду")
+        }
+        Button(onClick = { navController.navigate("aboutme") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Перейти к «О себе»")
+        }
+        Button(onClick = { navController.navigate("fontsettings") }, modifier = Modifier.fillMaxWidth()) {
+            Text("Настройки шрифта")
+        }
+    }
+}
+```
+
+---
+
+### 3. `PinCodeScreen.kt`
+
+```kotlin
+package com.example.lab17
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.input.KeyboardType
+
+@Composable
+fun PinCodeScreen() {
+    var pin by remember { mutableStateOf("") }           // вводимый пин-код
+    var attempts by remember { mutableStateOf(3) }       // количество попыток
+    var message by remember { mutableStateOf("") }       // сообщение пользователю
+
+    val correctPin = "1234"  // правильный код (можно изменить)
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text("Ввод ПИН-кода", style = MaterialTheme.typography.headlineMedium)
+
+        OutlinedTextField(
+            value = pin,
+            onValueChange = {
+                // Ограничение: только цифры и не больше 4 символов
+                if (it.length <= 4 && it.all { char -> char.isDigit() }) {
+                    pin = it
+                }
+            },
+            label = { Text("ПИН-код") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Button(
+            onClick = {
+                if (pin.length == 4) {
+                    if (pin == correctPin) {
+                        message = "Код верный!"
+                        attempts = 3
+                    } else {
+                        attempts--
+                        message = if (attempts > 0)
+                            "Неверный код. Осталось попыток: $attempts"
+                        else "Попытки исчерпаны. Ввод заблокирован."
+                    }
+                    pin = ""  // очищаем поле после проверки
+                }
+            },
+            enabled = attempts > 0 && pin.length == 4,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Отправить")
+        }
+
+        Text("Попыток осталось: $attempts", 
+            color = if (attempts > 0) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.error)
+        
+        if (message.isNotEmpty()) Text(message)
+    }
+}
+```
+
+---
+
+### 4. `AboutMeScreen.kt`
+
+```kotlin
+package com.example.lab17
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Modifier
+
+@Composable
+fun AboutMeScreen() {
+    var text by remember { mutableStateOf("") }
+    val maxLength = 300
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Text("О себе", style = MaterialTheme.typography.headlineMedium)
+
+        // Отображение оставшихся символов
+        Text("Осталось символов: ${maxLength - text.length}")
+
+        OutlinedTextField(
+            value = text,
+            onValueChange = {
+                // Ограничение длины текста
+                if (it.length <= maxLength) {
+                    text = it
+                }
+            },
+            label = { Text("Расскажите о себе") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),           // высота под большой текст
+            maxLines = 10
+        )
+    }
+}
+```
+
+---
+
+### 5. `FontSettingsScreen.kt`
+
+```kotlin
+package com.example.lab17
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.*
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun FontSettingsScreen() {
+    // Состояния настроек шрифта
+    var fontSize by remember { mutableStateOf(16f) }
+    var isBold by remember { mutableStateOf(false) }
+    var isItalic by remember { mutableStateOf(false) }
+    var selectedColor by remember { mutableStateOf(Color.Black) }
+
+    val colors = listOf(
+        Color.Black to "Чёрный",
+        Color.Red to "Красный",
+        Color.Blue to "Синий",
+        Color.Green to "Зелёный",
+        Color.Magenta to "Пурпурный"
+    )
+
+    Column(modifier = Modifier.padding(16.dp)) {
+
+        // Пример текста с применением всех настроек
+        Text(
+            text = "Пример текста с выбранными настройками",
+            fontSize = fontSize.sp,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+            fontStyle = if (isItalic) FontStyle.Italic else FontStyle.Normal,
+            color = selectedColor,
+            modifier = Modifier.padding(bottom = 24.dp)
+        )
+
+        // Радиокнопки для выбора цвета
+        Text("Цвет текста:", style = MaterialTheme.typography.titleMedium)
+        colors.forEach { (color, name) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = selectedColor == color,
+                        onClick = { selectedColor = color }
+                    )
+                    .padding(vertical = 4.dp)
+            ) {
+                RadioButton(
+                    selected = selectedColor == color,
+                    onClick = { selectedColor = color }
+                )
+                // Цветной квадратик
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .background(color)
+                        .padding(horizontal = 8.dp)
+                )
+                Text(name, modifier = Modifier.padding(start = 8.dp))
+            }
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Слайдер размера шрифта
+        Text("Размер шрифта: ${fontSize.toInt()}")
+        Slider(
+            value = fontSize,
+            onValueChange = { fontSize = it },
+            valueRange = 10f..30f,
+            steps = 19,                    // 20 шагов (10 до 30)
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Переключатели Switch
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = isBold, onCheckedChange = { isBold = it })
+            Text("Полужирный", modifier = Modifier.padding(start = 8.dp))
+        }
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = isItalic, onCheckedChange = { isItalic = it })
+            Text("Курсив", modifier = Modifier.padding(start = 8.dp))
+        }
+    }
+}
+```
+
+---
+
+**Готово!**  
+Всё подробно прокомментировано. Код соответствует всем пунктам лабораторной работы.
+
+Хочешь, я также добавлю комментарии к контрольным вопросам в конце отчёта?
