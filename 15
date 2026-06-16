@@ -1,0 +1,388 @@
+Вот весь код по порядку:
+
+---
+
+**Шаг 1 — создай файл `Screen.kt`** в пакете `com.example.lab15`:
+
+```kotlin
+package com.example.lab15
+
+enum class Screen {
+    LOGIN,
+    REGISTER,
+    PROFILE
+}
+```
+
+---
+
+**Шаг 2 — создай папку `screens` и в ней файл `LoginScreen.kt`:**
+
+```kotlin
+package com.example.lab15.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import com.example.lab15.Screen
+
+@Composable
+fun LoginScreen(onLogin: () -> Unit, onRegister: () -> Unit) {
+    var login by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Lock,
+            contentDescription = "Авторизация",
+            modifier = Modifier.size(80.dp),
+            tint = Color(0xFF1565C0)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "Авторизация", fontSize = 24.sp)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedTextField(
+            value = login,
+            onValueChange = { login = it },
+            label = { Text("Логин") },
+            placeholder = { Text("Введите логин") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Пароль") },
+            placeholder = { Text("Введите пароль") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+        )
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = onLogin,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF1565C0))
+        ) {
+            Text(text = "Войти", fontSize = 16.sp)
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        OutlinedButton(
+            onClick = onRegister,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text(text = "Зарегистрироваться", fontSize = 16.sp)
+        }
+    }
+}
+```
+
+---
+
+**Шаг 3 — в папке `screens` создай `RegisterScreen.kt`:**
+
+```kotlin
+package com.example.lab15.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PersonAdd
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun RegisterScreen(onOk: () -> Unit) {
+    var login by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.PersonAdd,
+            contentDescription = "Регистрация",
+            modifier = Modifier.size(80.dp),
+            tint = Color(0xFF2E7D32)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "Регистрация", fontSize = 24.sp)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = login,
+            onValueChange = { login = it },
+            label = { Text("Логин") },
+            placeholder = { Text("Введите логин") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Пароль") },
+            placeholder = { Text("Введите пароль") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Подтверждение пароля") },
+            placeholder = { Text("Повторите пароль") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Номер телефона") },
+            placeholder = { Text("+7 (___) ___-__-__") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            placeholder = { Text("example@mail.com") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email)
+        )
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = age,
+            onValueChange = { age = it },
+            label = { Text("Возраст") },
+            placeholder = { Text("Введите возраст") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)
+        )
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        Button(
+            onClick = onOk,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+        ) {
+            Text(text = "ОК", fontSize = 16.sp)
+        }
+    }
+}
+```
+
+---
+
+**Шаг 4 — в папке `screens` создай `ProfileScreen.kt`:**
+
+```kotlin
+package com.example.lab15.screens
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun ProfileScreen(onBack: () -> Unit) {
+    val scrollState = rememberScrollState()
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = Icons.Filled.AccountCircle,
+            contentDescription = "Профиль",
+            modifier = Modifier.size(80.dp),
+            tint = Color(0xFF6A1B9A)
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "Профиль пользователя", fontSize = 24.sp)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(text = "Логин: user123", fontSize = 16.sp, modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(text = "Имя: Иван Иванов", fontSize = 16.sp, modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(text = "Возраст: 20", fontSize = 16.sp, modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        Text(text = "Email: ivan@mail.com", fontSize = 16.sp, modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Text(text = "О себе:", fontSize = 16.sp, modifier = Modifier.fillMaxWidth())
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(120.dp)
+                .verticalScroll(scrollState)
+        ) {
+            Text(
+                text = "Здесь отображается информация о пользователе. Текст может быть длинным и прокручиваться по вертикали. Добавьте сюда любую дополнительную информацию о себе.",
+                fontSize = 14.sp,
+                color = Color(0xFF424242)
+            )
+        }
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        OutlinedButton(
+            onClick = onBack,
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text(text = "Назад", fontSize = 16.sp)
+        }
+    }
+}
+```
+
+---
+
+**Шаг 5 — замени содержимое `MainActivity.kt` полностью:**
+
+```kotlin
+package com.example.lab15
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.runtime.*
+import com.example.lab15.screens.LoginScreen
+import com.example.lab15.screens.ProfileScreen
+import com.example.lab15.screens.RegisterScreen
+import com.example.lab15.ui.theme.Lab15Theme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            Lab15Theme {
+                var current by remember { mutableStateOf(Screen.LOGIN) }
+
+                when (current) {
+                    Screen.LOGIN -> LoginScreen(
+                        onLogin = { current = Screen.PROFILE },
+                        onRegister = { current = Screen.REGISTER }
+                    )
+                    Screen.REGISTER -> RegisterScreen(
+                        onOk = { current = Screen.LOGIN }
+                    )
+                    Screen.PROFILE -> ProfileScreen(
+                        onBack = { current = Screen.LOGIN }
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+**Итого создаёшь/заменяешь 5 файлов:**
+- `Screen.kt` — в основном пакете
+- `screens/LoginScreen.kt`
+- `screens/RegisterScreen.kt`
+- `screens/ProfileScreen.kt`
+- `MainActivity.kt` — заменяешь
