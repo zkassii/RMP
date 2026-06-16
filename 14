@@ -1,0 +1,129 @@
+Вот весь код — просто копируй в нужные файлы:
+
+---
+
+**`MainActivity.kt`** — заменяешь содержимое полностью:
+
+```kotlin
+package com.example.lab14
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
+import com.example.lab14.ui.theme.Lab14Theme
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        val result = divide(10.0, 2.0)
+        println("Результат: $result")
+
+        setContent {
+            Lab14Theme {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
+                    Greeting("Android")
+                }
+            }
+        }
+    }
+
+    /**
+     * Делит число [a] на число [b] и возвращает результат.
+     *
+     * @param a Делимое.
+     * @param b Делитель. Не должен быть равен нулю.
+     * @return Результат деления [a] на [b].
+     * @throws ArithmeticException Если [b] равно нулю.
+     * @author Студент
+     * @since 1.0
+     * @sample com.example.lab14.MainActivity.divide
+     */
+    fun divide(a: Double, b: Double): Double {
+        if (b == 0.0) throw ArithmeticException("Деление на ноль недопустимо")
+        return a / b
+    }
+}
+
+/**
+ * Отображает приветственный текст с именем [name].
+ *
+ * @param name Имя, которое будет показано в приветствии.
+ * @param modifier Модификатор для настройки компонента.
+ * @author Студент
+ * @since 1.0
+ * @sample com.example.lab14.Greeting
+ */
+@Composable
+fun Greeting(name: String, modifier: Modifier = Modifier) {
+    Text(
+        text = "Hello $name!",
+        modifier = modifier
+    )
+}
+
+/**
+ * Предварительный просмотр компонента [Greeting] в Android Studio.
+ *
+ * @author Студент
+ * @since 1.0
+ * @sample com.example.lab14.GreetingPreview
+ */
+@Preview(showBackground = true)
+@Composable
+fun GreetingPreview() {
+    Lab14Theme {
+        Greeting("Android")
+    }
+}
+```
+
+---
+
+**`User.kt`** — создаёшь новый файл в том же пакете:
+
+```kotlin
+package com.example.lab14
+
+/**
+ * Хранит данные пользователя: логин и пароль.
+ *
+ * @property login Логин пользователя.
+ * @property password Пароль пользователя.
+ * @author Студент
+ * @since 1.0
+ * @sample com.example.lab14.User
+ */
+data class User(
+    val login: String,
+    val password: String
+) {
+
+    /**
+     * Проверяет, совпадает ли введённый пароль с паролем пользователя.
+     *
+     * @param inputPassword Пароль для проверки.
+     * @return true — если пароль совпадает, false — если нет.
+     * @author Студент
+     * @since 1.0
+     * @sample com.example.lab14.User.checkPassword
+     */
+    fun checkPassword(inputPassword: String): Boolean {
+        return inputPassword == password
+    }
+}
+```
+
+---
+
+**Как создать файл `User.kt`:** в Android Studio кликни правой кнопкой на папку с пакетом → New → Kotlin Class/File → вставь код.
