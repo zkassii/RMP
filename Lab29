@@ -1,0 +1,574 @@
+Вот полный код для лабораторной работы №29. Я разобью его по файлам:
+
+---
+
+## 📁 Структура файлов
+
+### 1. `build.gradle.kts` (app level) — зависимости
+```kotlin
+plugins {
+    alias(libs.plugins.android.application)
+    alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.kotlin.compose)
+}
+
+android {
+    namespace = "com.example.lab29"
+    compileSdk = 36
+
+    defaultConfig {
+        applicationId = "com.example.lab29"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 1
+        versionName = "1.0"
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+        }
+    }
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
+    }
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+    buildFeatures {
+        compose = true
+    }
+}
+
+dependencies {
+    implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.activity.compose)
+    implementation(platform(libs.androidx.compose.bom))
+    implementation(libs.androidx.ui)
+    implementation(libs.androidx.ui.graphics)
+    implementation(libs.androidx.ui.tooling.preview)
+    implementation(libs.androidx.material3)
+
+    // Retrofit
+    implementation("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation("com.squareup.retrofit2:converter-gson:2.9.0")
+
+    // ViewModel Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.10.0")
+}
+```
+
+---
+
+### 2. `AndroidManifest.xml` — интернет-разрешение
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+
+    <application
+        android:allowBackup="true"
+        android:label="Lab29"
+        android:theme="@style/Theme.Lab29"
+        android:supportsRtl="true">
+        <activity
+            android:name=".MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+    </application>
+
+</manifest>
+```
+
+---
+
+### 3. `Post.kt` — data class
+```kotlin
+package com.example.lab29
+
+data class Post(
+    val id: Int,
+    val title: String,
+    val content: String,
+    val authorId: Int?
+)
+
+data class Comment(
+    val id: Int,
+    val content: String,
+    val postId: Int,
+    val authorId: Int?
+)
+
+data class NewPost(
+    val title: String,
+    val content: String
+)
+
+data class NewComment(
+    val content: String,
+    val postId: Int
+)
+```
+
+---
+
+### 4. `ApiService.kt` — интерфейс Retrofit
+```kotlin
+package com.example.lab29
+
+import retrofit2.http.*
+
+interface ApiService {
+
+    @GET("posts")
+    suspend fun getPosts(): List<Post>
+
+    @GET("posts/{postId}/comments")
+    suspend fun getComments(
+        @Path("postId") postId: Int
+    ): List<Comment>
+
+    @POST("posts")
+    suspend fun createPost(@Body post: NewPost): Post
+
+    @POST("comments")
+    suspend fun createComment(@Body comment: NewComment): Comment
+}
+```
+
+---
+
+### 5. `Api.kt` — REST-клиент
+```kotlin
+package com.example.lab29
+
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
+
+object Api {
+    private const val BASE_URL = "https://forumapi.snowowl.ru/"
+
+    private val retrofit = Retrofit.Builder()
+        .baseUrl(BASE_URL)
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    val service: ApiService = retrofit.create(ApiService::class.java)
+
+    suspend fun getPosts(): List<Post> = service.getPosts()
+
+    suspend fun getComments(postId: Int): List<Comment> = service.getComments(postId)
+
+    suspend fun createPost(title: String, content: String): Post =
+        service.createPost(NewPost(title, content))
+
+    suspend fun createComment(content: String, postId: Int): Comment =
+        service.createComment(NewComment(content, postId))
+}
+```
+
+---
+
+### 6. `PostViewModel.kt` — ViewModel
+```kotlin
+package com.example.lab29
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class PostViewModel : ViewModel() {
+
+    private val _posts = MutableStateFlow<List<Post>>(emptyList())
+    val posts: StateFlow<List<Post>> = _posts
+
+    private val _comments = MutableStateFlow<Map<Int, List<Comment>>>(emptyMap())
+    val comments: StateFlow<Map<Int, List<Comment>>> = _comments
+
+    private val _expandedPostId = MutableStateFlow<Int?>(null)
+    val expandedPostId: StateFlow<Int?> = _expandedPostId
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    init {
+        loadPosts()
+    }
+
+    fun loadPosts() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                _posts.value = Api.getPosts()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun toggleComments(postId: Int) {
+        if (_expandedPostId.value == postId) {
+            _expandedPostId.value = null
+        } else {
+            _expandedPostId.value = postId
+            if (_comments.value[postId] == null) {
+                loadComments(postId)
+            }
+        }
+    }
+
+    private fun loadComments(postId: Int) {
+        viewModelScope.launch {
+            try {
+                val result = Api.getComments(postId)
+                _comments.value = _comments.value.toMutableMap().also {
+                    it[postId] = result
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun createPost(title: String, content: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val newPost = Api.createPost(title, content)
+                _posts.value = listOf(newPost) + _posts.value
+                onSuccess()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun createComment(content: String, postId: Int, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val newComment = Api.createComment(content, postId)
+                val current = _comments.value[postId]?.toMutableList() ?: mutableListOf()
+                current.add(newComment)
+                _comments.value = _comments.value.toMutableMap().also {
+                    it[postId] = current
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+}
+```
+
+---
+
+### 7. `MainActivity.kt` — UI (Jetpack Compose)
+```kotlin
+package com.example.lab29
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Comment
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                App()
+            }
+        }
+    }
+}
+
+sealed class Screen {
+    object PostList : Screen()
+    object AddPost : Screen()
+    data class AddComment(val postId: Int) : Screen()
+}
+
+@Composable
+fun App(vm: PostViewModel = viewModel()) {
+    var screen by remember { mutableStateOf<Screen>(Screen.PostList) }
+
+    when (val s = screen) {
+        is Screen.PostList -> PostListScreen(
+            vm = vm,
+            onAddPost = { screen = Screen.AddPost },
+            onAddComment = { postId -> screen = Screen.AddComment(postId) }
+        )
+        is Screen.AddPost -> AddPostScreen(
+            vm = vm,
+            onBack = { screen = Screen.PostList }
+        )
+        is Screen.AddComment -> AddCommentScreen(
+            vm = vm,
+            postId = s.postId,
+            onBack = { screen = Screen.PostList }
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostListScreen(
+    vm: PostViewModel,
+    onAddPost: () -> Unit,
+    onAddComment: (Int) -> Unit
+) {
+    val posts by vm.posts.collectAsState()
+    val comments by vm.comments.collectAsState()
+    val expandedPostId by vm.expandedPostId.collectAsState()
+    val isLoading by vm.isLoading.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Посты") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddPost) {
+                Icon(Icons.Default.Add, contentDescription = "Добавить пост")
+            }
+        }
+    ) { padding ->
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else {
+            LazyColumn(
+                contentPadding = padding,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(posts) { post ->
+                    PostCard(
+                        post = post,
+                        isExpanded = expandedPostId == post.id,
+                        comments = comments[post.id] ?: emptyList(),
+                        onToggleComments = { vm.toggleComments(post.id) },
+                        onAddComment = { onAddComment(post.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PostCard(
+    post: Post,
+    isExpanded: Boolean,
+    comments: List<Comment>,
+    onToggleComments: () -> Unit,
+    onAddComment: () -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 6.dp),
+        elevation = CardDefaults.cardElevation(4.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(text = post.title, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.titleMedium)
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(text = post.content, style = MaterialTheme.typography.bodyMedium)
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = onToggleComments) {
+                    Icon(Icons.Default.Comment, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(if (isExpanded) "Скрыть комментарии" else "Комментарии")
+                }
+                OutlinedButton(onClick = onAddComment) {
+                    Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(16.dp))
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Добавить комментарий")
+                }
+            }
+
+            if (isExpanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                HorizontalDivider()
+                if (comments.isEmpty()) {
+                    Text(
+                        text = "Нет комментариев",
+                        style = MaterialTheme.typography.bodySmall,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                } else {
+                    comments.forEach { comment ->
+                        CommentItem(comment)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CommentItem(comment: Comment) {
+    Column(modifier = Modifier.padding(vertical = 6.dp)) {
+        Text(
+            text = comment.content,
+            style = MaterialTheme.typography.bodySmall
+        )
+        HorizontalDivider(modifier = Modifier.padding(top = 4.dp))
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddPostScreen(vm: PostViewModel, onBack: () -> Unit) {
+    var title by remember { mutableStateOf("") }
+    var content by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Новый пост") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            OutlinedTextField(
+                value = title,
+                onValueChange = { title = it },
+                label = { Text("Заголовок") },
+                modifier = Modifier.fillMaxWidth()
+            )
+            OutlinedTextField(
+                value = content,
+                onValueChange = { content = it },
+                label = { Text("Содержание") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 4
+            )
+            Button(
+                onClick = {
+                    if (title.isNotBlank() && content.isNotBlank()) {
+                        isLoading = true
+                        vm.createPost(title, content) {
+                            isLoading = false
+                            onBack()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                else Text("Добавить пост")
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun AddCommentScreen(vm: PostViewModel, postId: Int, onBack: () -> Unit) {
+    var content by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Новый комментарий") },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Назад")
+                    }
+                }
+            )
+        }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text("Комментарий к посту #$postId", style = MaterialTheme.typography.titleSmall)
+            OutlinedTextField(
+                value = content,
+                onValueChange = { content = it },
+                label = { Text("Текст комментария") },
+                modifier = Modifier.fillMaxWidth(),
+                minLines = 4
+            )
+            Button(
+                onClick = {
+                    if (content.isNotBlank()) {
+                        isLoading = true
+                        vm.createComment(content, postId) {
+                            isLoading = false
+                            onBack()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isLoading
+            ) {
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp))
+                else Text("Добавить комментарий")
+            }
+        }
+    }
+}
+```
+
+---
+
+## 📋 Что куда копировать
+
+| Файл | Путь в проекте |
+|---|---|
+| `build.gradle.kts` | `app/build.gradle.kts` |
+| `AndroidManifest.xml` | `app/src/main/AndroidManifest.xml` |
+| `Post.kt` | `app/src/main/java/com/example/lab29/Post.kt` |
+| `ApiService.kt` | `app/src/main/java/com/example/lab29/ApiService.kt` |
+| `Api.kt` | `app/src/main/java/com/example/lab29/Api.kt` |
+| `PostViewModel.kt` | `app/src/main/java/com/example/lab29/PostViewModel.kt` |
+| `MainActivity.kt` | `app/src/main/java/com/example/lab29/MainActivity.kt` |
+
+> ⚠️ Везде где `com.example.lab29` — замени на свой `package name` если он другой (смотри в существующем `MainActivity.kt`).
+
+После вставки нажми **Sync Now** в Gradle и запускай!
