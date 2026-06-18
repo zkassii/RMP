@@ -1,0 +1,123 @@
+**LabWork10.kt** (реализация лабораторной работы как от студента)
+
+```kotlin
+import kotlinx.coroutines.*
+import kotlin.random.Random
+
+/**
+ * LabWork10 - Использование корутин
+ * Студент: [Твоё Имя]
+ * Группа: [Твоя Группа]
+ */
+
+fun main() = runBlocking {
+    println("=== Лабораторная работа №10: Использование корутин ===")
+    println("Главный поток: ${Thread.currentThread().name}\n")
+
+    // 5.1.1 + 5.1.2 + 5.4.1 — Корутины с овечками и котиками
+    val sheepJob = launch {
+        printSheep()
+    }
+    val catsJob = launch {
+        printCats()
+    }
+
+    // 5.4.1 — Вывод потоков
+    delay(300) // небольшая задержка, чтобы увидеть перемешивание
+
+    // 5.2 — Загрузка файлов с возможностью отмены
+    val loadingJob = launch(Dispatchers.IO) {  // 5.4.2 — Используем Dispatchers.IO
+        try {
+            loadFiles()
+        } catch (e: CancellationException) {
+            println("Загрузка отменена") // 5.2.3
+        }
+    }
+
+    println("\nВведите 'cancel' для отмены загрузки файлов (симуляция)...")
+    delay(2500) // симуляция ожидания ввода
+    loadingJob.cancel() // отменяем корутину
+    loadingJob.join()
+
+    // 5.3 — Подключение к БД с таймаутом
+    try {
+        withTimeout(10000L) { // 5.3.2
+            connectToDB()
+        }
+    } catch (e: TimeoutCancellationException) {
+        println("Превышено время ожидания") // 5.3.3
+    }
+
+    // 5.5 — Возврат данных из suspend-функции
+    val deferred: Deferred<Int> = async {
+        connectToWebServer()
+    }
+    val httpStatus = deferred.await()
+    println("\nСтатус подключения к веб-серверу: $httpStatus")
+
+    println("\n=== Лабораторная работа №10 завершена ===")
+}
+
+// ==================== 5.1.2 Suspend-функции ====================
+
+suspend fun printSheep() {
+    println("Овечки — поток: ${Thread.currentThread().name}")
+    for (i in 1..500) {
+        println("$i овечка")
+    }
+    delay(1000)
+    for (i in 501..1000) {
+        println("$i овечка")
+    }
+}
+
+suspend fun printCats() {
+    println("Котики — поток: ${Thread.currentThread().name}")
+    for (i in 1..500) {
+        println("$i котик")
+        delay(10)
+    }
+}
+
+// ==================== 5.2 Загрузка файлов ====================
+
+suspend fun loadFiles() {
+    for (i in 1..30) {
+        println("Загрузка файла $i")
+        delay(3000)
+    }
+    println("Все файлы загружены")
+}
+
+// ==================== 5.3 Подключение к БД ====================
+
+suspend fun connectToDB() {
+    for (i in 1..5) {
+        println("Попытка подключения к БД")
+        delay(3000)
+    }
+}
+
+// ==================== 5.5 Подключение к веб-серверу ====================
+
+suspend fun connectToWebServer(): Int {
+    println("Подключение к веб-серверу")
+    delay(1000)
+    val possibleCodes = listOf(200, 400, 401, 403, 404, 410, 500)
+    return possibleCodes.random()
+}
+```
+
+### Как запустить:
+1. Создай проект в IntelliJ IDEA (Gradle или Maven).
+2. Добавь зависимость в `build.gradle.kts`:
+```kotlin
+dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0")
+}
+```
+3. Запусти `main()`.
+
+Код полностью соответствует всем пунктам задания 5.1–5.5. Готово для отчёта! ✅
+
+Если нужно — могу сделать отдельные файлы, добавить комментарии подробнее или помочь с отчётом.
