@@ -1,0 +1,197 @@
+Давай посмотрим что реально отвечает API на комментарии:Поиск не помог, но из реального JSON уже всё видно. Скорее всего проблема в **cleartext трафике** — Android с API 28+ блокирует HTTP, а у них `https` — значит другая причина. Давай проверю точнее.
+
+Самые частые причины что не подключается к API на Android:
+
+**1. Нет `cleartext` / SSL конфига** — маловероятно, у них https  
+**2. Неправильный BASE_URL** — нужен слэш в конце  
+**3. Приложение крашится до загрузки данных** — нужно добавить try/catch с показом ошибки
+
+Вот что нужно сделать — добавь **отображение ошибок** чтобы видеть что именно не так:
+
+---
+
+### ✅ Замени `PostViewModel.kt` полностью:
+
+```kotlin
+package com.example.lab29
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
+
+class PostViewModel : ViewModel() {
+
+    private val _posts = MutableStateFlow<List<Post>>(emptyList())
+    val posts: StateFlow<List<Post>> = _posts
+
+    private val _comments = MutableStateFlow<Map<Int, List<Comment>>>(emptyMap())
+    val comments: StateFlow<Map<Int, List<Comment>>> = _comments
+
+    private val _expandedPostId = MutableStateFlow<Int?>(null)
+    val expandedPostId: StateFlow<Int?> = _expandedPostId
+
+    private val _isLoading = MutableStateFlow(false)
+    val isLoading: StateFlow<Boolean> = _isLoading
+
+    private val _errorMessage = MutableStateFlow<String?>(null)
+    val errorMessage: StateFlow<String?> = _errorMessage
+
+    init {
+        loadPosts()
+    }
+
+    fun loadPosts() {
+        viewModelScope.launch {
+            _isLoading.value = true
+            _errorMessage.value = null
+            try {
+                val result = Api.service.getPosts()
+                _posts.value = result
+            } catch (e: Exception) {
+                _errorMessage.value = "Ошибка: ${e.javaClass.simpleName}: ${e.message}"
+                e.printStackTrace()
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
+
+    fun toggleComments(postId: Int) {
+        if (_expandedPostId.value == postId) {
+            _expandedPostId.value = null
+        } else {
+            _expandedPostId.value = postId
+            if (_comments.value[postId] == null) {
+                loadComments(postId)
+            }
+        }
+    }
+
+    private fun loadComments(postId: Int) {
+        viewModelScope.launch {
+            try {
+                val result = Api.service.getComments(postId)
+                _comments.value = _comments.value.toMutableMap().also {
+                    it[postId] = result
+                }
+            } catch (e: Exception) {
+                _errorMessage.value = "Ошибка комментариев: ${e.javaClass.simpleName}: ${e.message}"
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun createPost(title: String, body: String, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val newPost = Api.service.createPost(NewPost(title, body))
+                _posts.value = listOf(newPost) + _posts.value
+                onSuccess()
+            } catch (e: Exception) {
+                _errorMessage.value = "Ошибка создания поста: ${e.message}"
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun createComment(body: String, postId: Int, onSuccess: () -> Unit) {
+        viewModelScope.launch {
+            try {
+                val newComment = Api.service.createComment(NewComment(body, postId))
+                val current = _comments.value[postId]?.toMutableList() ?: mutableListOf()
+                current.add(newComment)
+                _comments.value = _comments.value.toMutableMap().also {
+                    it[postId] = current
+                }
+                onSuccess()
+            } catch (e: Exception) {
+                _errorMessage.value = "Ошибка создания комментария: ${e.message}"
+                e.printStackTrace()
+            }
+        }
+    }
+
+    fun clearError() {
+        _errorMessage.value = null
+    }
+}
+```
+
+---
+
+### ✅ В `PostListScreen` добавь показ ошибки — вставь это после `Scaffold`:
+
+```kotlin
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun PostListScreen(
+    vm: PostViewModel,
+    onAddPost: () -> Unit,
+    onAddComment: (Int) -> Unit
+) {
+    val posts by vm.posts.collectAsState()
+    val comments by vm.comments.collectAsState()
+    val expandedPostId by vm.expandedPostId.collectAsState()
+    val isLoading by vm.isLoading.collectAsState()
+    val errorMessage by vm.errorMessage.collectAsState()
+
+    Scaffold(
+        topBar = {
+            TopAppBar(title = { Text("Посты") })
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onAddPost) {
+                Icon(Icons.Default.Add, contentDescription = "Добавить пост")
+            }
+        }
+    ) { padding ->
+
+        // Показ ошибки
+        errorMessage?.let { error ->
+            AlertDialog(
+                onDismissRequest = { vm.clearError() },
+                title = { Text("Ошибка") },
+                text = { Text(error) },
+                confirmButton = {
+                    TextButton(onClick = { vm.clearError() }) { Text("OK") }
+                }
+            )
+        }
+
+        if (isLoading) {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                CircularProgressIndicator()
+            }
+        } else if (posts.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Посты не загружены")
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Button(onClick = { vm.loadPosts() }) { Text("Повторить") }
+                }
+            }
+        } else {
+            LazyColumn(
+                contentPadding = padding,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                items(posts) { post ->
+                    PostCard(
+                        post = post,
+                        isExpanded = expandedPostId == post.id,
+                        comments = comments[post.id] ?: emptyList(),
+                        onToggleComments = { vm.toggleComments(post.id) },
+                        onAddComment = { onAddComment(post.id) }
+                    )
+                }
+            }
+        }
+    }
+}
+```
+
+---
+
+Запусти — теперь если что-то не так с сетью, ты увидишь **конкретную ошибку** в диалоге. Напиши что там написано и я сразу скажу как починить.
