@@ -1,0 +1,372 @@
+**Готово!** Вот полный код для **Лабораторной работы №17** в стиле студента.
+
+### MainActivity.kt
+
+```kotlin
+// MainActivity.kt
+package com.example.labwork17
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            MaterialTheme {
+                LabWork17App()
+            }
+        }
+    }
+}
+
+@Composable
+fun LabWork17App() {
+    var selectedTab by remember { mutableStateOf(0) }
+    val tabs = listOf("Регистрация", "Пин-код", "О себе", "Настройки шрифта")
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        TabRow(selectedTabIndex = selectedTab) {
+            tabs.forEachIndexed { index, title ->
+                Tab(
+                    selected = selectedTab == index,
+                    onClick = { selectedTab = index },
+                    text = { Text(title) }
+                )
+            }
+        }
+
+        when (selectedTab) {
+            0 -> RegistrationScreen()
+            1 -> PinCodeScreen()
+            2 -> AboutMeScreen()
+            3 -> FontSettingsScreen()
+        }
+    }
+}
+```
+
+---
+
+### 1. Экран регистрации
+
+```kotlin
+@Composable
+fun RegistrationScreen() {
+    var login by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    var confirmPassword by remember { mutableStateOf("") }
+    var phone by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var age by remember { mutableStateOf("") }
+    var website by remember { mutableStateOf("") }
+    var agreed by remember { mutableStateOf(false) }
+    var message by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Экран регистрации", style = MaterialTheme.typography.headlineMedium)
+
+        OutlinedTextField(
+            value = login,
+            onValueChange = { login = it },
+            label = { Text("Логин") },
+            placeholder = { Text("Введите логин") },
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Пароль") },
+            placeholder = { Text("Введите пароль") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = confirmPassword,
+            onValueChange = { confirmPassword = it },
+            label = { Text("Подтверждение пароля") },
+            placeholder = { Text("Повторите пароль") },
+            visualTransformation = PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = phone,
+            onValueChange = { phone = it },
+            label = { Text("Номер телефона") },
+            placeholder = { Text("+7 (___) ___-__-__") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            placeholder = { Text("example@mail.com") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = age,
+            onValueChange = { if (it.all { char -> char.isDigit() }) age = it },
+            label = { Text("Возраст") },
+            placeholder = { Text("Ваш возраст") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        OutlinedTextField(
+            value = website,
+            onValueChange = { website = it },
+            label = { Text("Персональный сайт") },
+            placeholder = { Text("https://example.com") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Checkbox(checked = agreed, onCheckedChange = { agreed = it })
+            Text("Я согласен на обработку персональных данных")
+        }
+
+        Button(
+            onClick = {
+                message = if (login.isNotBlank() && password.isNotBlank() &&
+                    confirmPassword.isNotBlank() && phone.isNotBlank() &&
+                    email.isNotBlank() && age.isNotBlank() && website.isNotBlank() && agreed) {
+                    "$login, вы зарегистрированы!"
+                } else {
+                    "Не все поля заполнены"
+                }
+            },
+            enabled = agreed,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Зарегистрироваться")
+        }
+
+        if (message.isNotEmpty()) {
+            Text(message, color = if (message.contains("зарегистрированы")) Color.Green else Color.Red)
+        }
+    }
+}
+```
+
+---
+
+### 2. Экран Пин-кода
+
+```kotlin
+@Composable
+fun PinCodeScreen() {
+    var pin by remember { mutableStateOf("") }
+    var attempts by remember { mutableStateOf(3) }
+    var message by remember { mutableStateOf("") }
+    val correctPin = "1234"
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text("Введите PIN-код", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(
+            value = pin,
+            onValueChange = {
+                if (it.length <= 4 && it.all { char -> char.isDigit() }) {
+                    pin = it
+                }
+            },
+            label = { Text("PIN-код") },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword),
+            visualTransformation = PasswordVisualTransformation(),
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Button(
+            onClick = {
+                if (pin.length == 4) {
+                    if (pin == correctPin) {
+                        message = "✅ Код верный!"
+                        attempts = 3
+                    } else {
+                        attempts--
+                        message = if (attempts > 0) "❌ Неверный код. Осталось попыток: $attempts" else "❌ Попытки исчерпаны. Ввод заблокирован."
+                    }
+                    pin = ""
+                }
+            },
+            enabled = attempts > 0 && pin.length == 4,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("Отправить")
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+        Text("Попыток осталось: $attempts", color = if (attempts > 0) Color.Black else Color.Red)
+        if (message.isNotEmpty()) Text(message)
+    }
+}
+```
+
+---
+
+### 3. Экран «О себе»
+
+```kotlin
+@Composable
+fun AboutMeScreen() {
+    var text by remember { mutableStateOf("") }
+    val maxLength = 300
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text("Расскажите о себе", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(8.dp))
+
+        OutlinedTextField(
+            value = text,
+            onValueChange = {
+                if (it.length <= maxLength) text = it
+            },
+            label = { Text("О себе") },
+            placeholder = { Text("Напишите здесь...") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp),
+            maxLines = 10
+        )
+
+        Text(
+            text = "Осталось символов: ${maxLength - text.length}",
+            modifier = Modifier.padding(top = 8.dp)
+        )
+    }
+}
+```
+
+---
+
+### 4. Настройки шрифта
+
+```kotlin
+@Composable
+fun FontSettingsScreen() {
+    var fontSize by remember { mutableStateOf(16f) }
+    var isBold by remember { mutableStateOf(false) }
+    var isItalic by remember { mutableStateOf(false) }
+    var selectedColor by remember { mutableStateOf(Color.Black) }
+
+    val colors = listOf(
+        Color.Black to "Чёрный",
+        Color.Red to "Красный",
+        Color.Blue to "Синий",
+        Color.Green to "Зелёный",
+        Color.Magenta to "Фиолетовый"
+    )
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(
+            text = "Пример текста",
+            fontSize = fontSize.sp,
+            fontWeight = if (isBold) FontWeight.Bold else FontWeight.Normal,
+            fontStyle = if (isItalic) FontStyle.Italic else FontStyle.Normal,
+            color = selectedColor
+        )
+
+        // RadioButtons для цвета
+        Text("Цвет текста:")
+        colors.forEach { (color, name) ->
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable { selectedColor = color }
+            ) {
+                RadioButton(
+                    selected = selectedColor == color,
+                    onClick = { selectedColor = color }
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                Box(modifier = Modifier.size(20.dp).background(color))
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(name)
+            }
+        }
+
+        // Slider
+        Text("Размер шрифта: ${fontSize.toInt()}")
+        Slider(
+            value = fontSize,
+            onValueChange = { fontSize = it },
+            valueRange = 10f..30f,
+            steps = 19,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        // Switches
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = isBold, onCheckedChange = { isBold = it })
+            Text("Полужирный")
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Switch(checked = isItalic, onCheckedChange = { isItalic = it })
+            Text("Курсив")
+        }
+    }
+}
+```
+
+---
+
+**Как использовать:**
+1. Создай новый проект Jetpack Compose.
+2. Замени содержимое `MainActivity.kt` на код выше.
+3. Запусти.
+
+Всё соответствует требованиям лабораторной. Удачи на сдаче! 🚀
+
+Если нужно что-то поправить — пиши.
