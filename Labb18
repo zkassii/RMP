@@ -1,0 +1,487 @@
+# Лабораторная работа №18 — Настройка кнопок
+
+---
+
+## 📁 СТРУКТУРА ФАЙЛОВ
+
+Все файлы создаёшь в папке:
+`app/src/main/java/com/example/ТВОЙПРОЕКТ/`
+
+Создай следующие файлы:
+- `Screen1Buttons.kt` — задание 5.1
+- `Screen2Shop.kt` — задание 5.2
+- `Screen3Product.kt` — задание 5.3
+- `Screen4Contacts.kt` — задание 5.4
+- `Screen5Tasks.kt` — задание 5.5
+- `MainActivity.kt` — главный файл (навигация)
+
+---
+
+## 📄 Screen1Buttons.kt — Задание 5.1 (Обработка нажатия кнопки)
+
+```kotlin
+package com.example.ТВОЙПРОЕКТ  // <-- замени на свой пакет
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import kotlin.random.Random
+
+@Composable
+fun Screen1Buttons() {
+    var clickCount by remember { mutableStateOf(0) }
+    var buttonColor by remember { mutableStateOf(Color(0xFF6200EE)) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Счётчик нажатий: $clickCount", fontSize = 20.sp)
+
+        // 5.1.2 — три вида кнопок
+        Button(onClick = { clickCount++ }) {
+            Text("Button")
+        }
+        OutlinedButton(onClick = { clickCount++ }) {
+            Text("OutlinedButton")
+        }
+        TextButton(onClick = { clickCount++ }) {
+            Text("TextButton")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+        Text("Кнопки с разным скруглением:", fontSize = 16.sp)
+
+        // 5.1.3 — три кнопки с разной формой скругления
+        Button(
+            onClick = { clickCount++ },
+            shape = RoundedCornerShape(0.dp) // без скругления
+        ) {
+            Text("Прямые углы")
+        }
+        Button(
+            onClick = { clickCount++ },
+            shape = RoundedCornerShape(12.dp) // среднее скругление
+        ) {
+            Text("Среднее скругление")
+        }
+        Button(
+            onClick = { clickCount++ },
+            shape = CutCornerShape(12.dp) // срезанные углы
+        ) {
+            Text("Срезанные углы")
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // 5.1.4 — кнопка с рандомным цветом
+        Button(
+            onClick = {
+                clickCount++
+                buttonColor = Color(
+                    red = Random.nextFloat(),
+                    green = Random.nextFloat(),
+                    blue = Random.nextFloat()
+                )
+            },
+            colors = ButtonDefaults.buttonColors(containerColor = buttonColor)
+        ) {
+            Text("Случайный цвет")
+        }
+    }
+}
+```
+
+---
+
+## 📄 Screen2Shop.kt — Задание 5.2 (Изображение на кнопке / корзина)
+
+```kotlin
+package com.example.ТВОЙПРОЕКТ
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ShoppingCart
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun Screen2Shop() {
+    val products = listOf(
+        "Яблоки 1 кг", "Молоко 1 л", "Хлеб белый", "Сыр Гауда",
+        "Масло сливочное", "Яйца 10 шт", "Сметана 400г", "Кефир 1 л",
+        "Творог 200г", "Йогурт клубника", "Апельсины 1 кг", "Бананы 1 кг"
+    )
+    var cartCount by remember { mutableStateOf(0) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .weight(1f)
+                .padding(horizontal = 16.dp)
+        ) {
+            items(products) { product ->
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(text = product, fontSize = 16.sp, modifier = Modifier.weight(1f))
+                    IconButton(onClick = { cartCount++ }) {
+                        Icon(
+                            imageVector = Icons.Filled.ShoppingCart,
+                            contentDescription = "Добавить в корзину"
+                        )
+                    }
+                }
+                Divider()
+            }
+        }
+
+        // Нижний блок с количеством товаров в корзине
+        Surface(
+            tonalElevation = 4.dp,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Filled.ShoppingCart, contentDescription = null)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text("Товаров в корзине: $cartCount", fontSize = 18.sp)
+            }
+        }
+    }
+}
+```
+
+---
+
+## 📄 Screen3Product.kt — Задание 5.3 (IconButton +/-)
+
+```kotlin
+package com.example.ТВОЙПРОЕКТ
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun Screen3Product() {
+    val productName = "Ноутбук Lenovo IdeaPad"
+    val price = 45000
+
+    var quantity by remember { mutableStateOf(0) }
+    val total = quantity * price
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        Text(text = productName, fontSize = 22.sp)
+        Text(text = "Цена: $price ₽", fontSize = 18.sp)
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            // Кнопка уменьшения — недоступна при 0
+            IconButton(
+                onClick = { if (quantity > 0) quantity-- },
+                enabled = quantity > 0
+            ) {
+                Icon(Icons.Filled.Delete, contentDescription = "Уменьшить")
+            }
+
+            Text(text = "Количество: $quantity", fontSize = 18.sp)
+
+            // Кнопка увеличения — недоступна при 10
+            IconButton(
+                onClick = { if (quantity < 10) quantity++ },
+                enabled = quantity < 10
+            ) {
+                Icon(Icons.Filled.Add, contentDescription = "Увеличить")
+            }
+        }
+
+        Text(text = "Итого: $total ₽", fontSize = 20.sp)
+    }
+}
+```
+
+---
+
+## 📄 Screen4Contacts.kt — Задание 5.4 (FloatingActionButton)
+
+```kotlin
+package com.example.ТВОЙПРОЕКТ
+
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Call
+import androidx.compose.material.icons.filled.Email
+import androidx.compose.material3.*
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun Screen4Contacts() {
+    val contacts = listOf(
+        "Анна Иванова", "Борис Петров", "Виктор Сидоров",
+        "Галина Козлова", "Дмитрий Новиков", "Елена Морозова",
+        "Жанна Волкова", "Иван Зайцев", "Кирилл Попов",
+        "Людмила Соколова", "Михаил Лебедев", "Наталья Орлова"
+    )
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            items(contacts) { contact ->
+                Text(
+                    text = contact,
+                    fontSize = 16.sp,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { /* ничего не делаем */ }
+                        .padding(vertical = 12.dp)
+                )
+                Divider()
+            }
+        }
+
+        // FloatingActionButton'ы снизу справа поверх списка
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            FloatingActionButton(onClick = { /* звонок */ }) {
+                Icon(Icons.Filled.Call, contentDescription = "Позвонить")
+            }
+            FloatingActionButton(onClick = { /* email */ }) {
+                Icon(Icons.Filled.Email, contentDescription = "Email")
+            }
+        }
+    }
+}
+```
+
+---
+
+## 📄 Screen5Tasks.kt — Задание 5.5 (ExtendedFloatingActionButton)
+
+```kotlin
+package com.example.ТВОЙПРОЕКТ
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+
+@Composable
+fun Screen5Tasks() {
+    var tasks by remember {
+        mutableStateOf(
+            listOf(
+                "Купить продукты",
+                "Сделать зарядку",
+                "Позвонить маме",
+                "Прочитать книгу",
+                "Убраться дома"
+            )
+        )
+    }
+    val checked = remember { mutableStateListOf(*Array(100) { false }) }
+    var taskCount by remember { mutableStateOf(tasks.size) }
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 16.dp)
+        ) {
+            itemsIndexed(tasks) { index, task ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 4.dp)
+                ) {
+                    Checkbox(
+                        checked = if (index < checked.size) checked[index] else false,
+                        onCheckedChange = { checked[index] = it }
+                    )
+                    Text(text = task, fontSize = 16.sp)
+                }
+            }
+            // Отступ снизу чтобы кнопка не перекрывала последний элемент
+            item { Spacer(modifier = Modifier.height(80.dp)) }
+        }
+
+        // ExtendedFloatingActionButton снизу справа
+        ExtendedFloatingActionButton(
+            onClick = {
+                taskCount++
+                tasks = tasks + "Новая задача $taskCount"
+            },
+            icon = { Icon(Icons.Filled.Add, contentDescription = "Добавить") },
+            text = { Text("Добавить") },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
+    }
+}
+```
+
+---
+
+## 📄 MainActivity.kt — Навигация между экранами
+
+```kotlin
+package com.example.ТВОЙПРОЕКТ
+
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.example.ТВОЙПРОЕКТ.ui.theme.ТВОЙПРОЕКТTheme  // автоматически генерируется
+
+class MainActivity : ComponentActivity() {
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        setContent {
+            ТВОЙПРОЕКТTheme {  // замени на своё имя темы
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    MainScreen()
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MainScreen() {
+    var currentScreen by remember { mutableStateOf(0) }
+
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Кнопки выбора экрана
+        if (currentScreen != 0) {
+            Button(
+                onClick = { currentScreen = 0 },
+                modifier = Modifier.padding(8.dp)
+            ) {
+                Text("← Назад")
+            }
+        }
+
+        when (currentScreen) {
+            0 -> MenuScreen { currentScreen = it }
+            1 -> Screen1Buttons()
+            2 -> Screen2Shop()
+            3 -> Screen3Product()
+            4 -> Screen4Contacts()
+            5 -> Screen5Tasks()
+        }
+    }
+}
+
+@Composable
+fun MenuScreen(onSelect: (Int) -> Unit) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("Лабораторная работа №18", style = MaterialTheme.typography.headlineSmall)
+        Button(onClick = { onSelect(1) }, modifier = Modifier.fillMaxWidth()) {
+            Text("5.1 — Обработка нажатия кнопки")
+        }
+        Button(onClick = { onSelect(2) }, modifier = Modifier.fillMaxWidth()) {
+            Text("5.2 — Кнопка с изображением (корзина)")
+        }
+        Button(onClick = { onSelect(3) }, modifier = Modifier.fillMaxWidth()) {
+            Text("5.3 — IconButton +/-")
+        }
+        Button(onClick = { onSelect(4) }, modifier = Modifier.fillMaxWidth()) {
+            Text("5.4 — FloatingActionButton")
+        }
+        Button(onClick = { onSelect(5) }, modifier = Modifier.fillMaxWidth()) {
+            Text("5.5 — ExtendedFloatingActionButton")
+        }
+    }
+}
+```
+
+---
+
+## ✅ ЧТО НУЖНО ЗАМЕНИТЬ
+
+В каждом файле замени:
+- `com.example.ТВОЙПРОЕКТ` → твой реальный пакет (смотри в `AndroidManifest.xml`, строка `package=`)
+- `ТВОЙПРОЕКТTheme` → имя темы из файла `ui/theme/Theme.kt` (обычно это `НазваниеПроектаTheme`)
+
+---
+
+## 📦 ЗАВИСИМОСТИ (build.gradle)
+
+Проверь что в `build.gradle (Module: app)` есть:
+```
+implementation("androidx.compose.material:material-icons-extended")
+```
+Если нет — добавь в блок `dependencies {}` и нажми **Sync Now**.
